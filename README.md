@@ -1,14 +1,17 @@
-# Cloze Listening App v7 (with POS + Core Meaning Selection)
+# Cloze Listening App v7.1 (Streamlit Cloud Ready)
+
+🧠 Smart missing word selection based on custom POS logic (no external NLP model)
 
 ## Features
-- 🎯 Smart missing word selection based on sentence structure
-- ✅ Uses POS tagging and dependency parsing
-- 🔊 TTS for paragraph playback
-- 🧠 More meaningful cloze practice
+- ✅ Selects verbs, nouns, adjectives, adverbs based on suffix patterns
+- ✅ No spaCy or stanza required
+- ✅ Works perfectly on Streamlit Cloud
+- ✅ Includes TTS audio for listening practice
+- ✅ Progressive paragraph completion, tab-ready UI
 
-## Run
+## Run on Cloud or Local
+
 ```bash
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
 streamlit run cloze_app.py
 ```

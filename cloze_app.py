@@ -3,17 +3,9 @@ import streamlit as st
 import random
 import re
 import math
-import spacy
 from gtts import gTTS
 import base64
 from io import BytesIO
-
-# Load spaCy model once
-@st.cache_resource
-def load_model():
-    return spacy.load("en_core_web_sm")
-
-nlp = load_model()
 
 def tts_base64(text):
     tts = gTTS(text)
@@ -22,27 +14,33 @@ def tts_base64(text):
     b64 = base64.b64encode(buf.getvalue()).decode()
     return f"data:audio/mp3;base64,{b64}"
 
-def get_important_indices(doc):
-    indices = []
-    for token in doc:
-        if token.dep_ in {"ROOT", "nsubj", "dobj", "attr", "acomp"} and token.pos_ in {"VERB", "NOUN", "ADJ"}:
-            indices.append(token.i)
-    return indices
+def is_candidate(word):
+    word = word.lower().strip(".,!?;")
+    return (
+        len(word) > 3 and (
+            word.endswith("ing") or word.endswith("ed") or word.endswith("ly") or
+            word.endswith("ous") or word.endswith("ful") or word.endswith("ness") or
+            word.endswith("ment") or word.endswith("ion") or word.endswith("ity") or
+            word.endswith("al") or word.endswith("ive")
+        )
+    )
+
+def select_keywords(words, ratio=0.2):
+    word_indices = [i for i, w in enumerate(words) if re.match(r"\w+$", w) and is_candidate(w)]
+    if not word_indices:
+        word_indices = [i for i, w in enumerate(words) if re.match(r"\w+$", w) and len(w) > 3]
+    num_to_remove = max(1, int(len(word_indices) * ratio))
+    return sorted(random.sample(word_indices, min(num_to_remove, len(word_indices))))
 
 def generate_cloze_paragraphs(paragraphs, ratio):
     blocks = []
     for p in paragraphs:
-        doc = nlp(p)
-        words = [token.text_with_ws for token in doc]
-        candidate_indices = get_important_indices(doc)
-        if not candidate_indices:
-            candidate_indices = [i for i, token in enumerate(doc) if token.pos_ in {"NOUN", "VERB", "ADJ"}]
-        num_to_remove = max(1, int(len(candidate_indices) * ratio))
-        selected_indices = sorted(random.sample(candidate_indices, min(num_to_remove, len(candidate_indices))))
-        answers = [words[i].strip() for i in selected_indices]
+        words = re.findall(r"\w+|\W", p)
+        selected_indices = select_keywords(words, ratio)
+        answers = [words[i] for i in selected_indices]
         cloze_words = words[:]
         for i in selected_indices:
-            cloze_words[i] = "____ "
+            cloze_words[i] = "____"
         blocks.append({
             "original": p,
             "tokens": cloze_words,
@@ -55,8 +53,8 @@ def generate_cloze_paragraphs(paragraphs, ratio):
         })
     return blocks
 
-st.set_page_config(page_title="Cloze App v7", layout="wide")
-st.title("🧠 Cloze Listening Practice (Smart POS & Core Word Selection)")
+st.set_page_config(page_title="Cloze App v7.1", layout="wide")
+st.title("🧠 Cloze Listening App (Rule-based POS Selection)")
 
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
@@ -93,9 +91,9 @@ if st.session_state.get("initialized", False):
     display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
-            display_tokens[pos] = f"<u>{correct_words[i]}</u> "
+            display_tokens[pos] = f"<u>{correct_words[i]}</u>"
         else:
-            display_tokens[pos] = f"<b>[{i+1}] ____</b> "
+            display_tokens[pos] = f"<b>[{i+1}] ____</b>"
     st.markdown("**Cloze Paragraph:**", unsafe_allow_html=True)
     st.markdown("".join(display_tokens), unsafe_allow_html=True)
 
