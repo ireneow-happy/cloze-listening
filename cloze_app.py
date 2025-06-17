@@ -19,6 +19,7 @@ if paragraph_input:
         st.session_state.answers = []
         st.session_state.positions = []
         st.session_state.tokens = []
+        st.session_state.fill_index = 0
 
     def generate_cloze_data(paragraph, ratio):
         words = re.findall(r"\b\w+\b|\W", paragraph)
@@ -37,25 +38,18 @@ if paragraph_input:
         st.session_state.answers = answers
         st.session_state.positions = positions
         st.session_state.correct_words = [None] * len(positions)
+        st.session_state.fill_index = 0
 
     current_idx = st.session_state.current_index
     tokens = st.session_state.tokens
     answers = st.session_state.answers
     positions = st.session_state.positions
     correct_words = st.session_state.correct_words
+    fill_index = st.session_state.fill_index
 
     st.subheader(f"Paragraph {current_idx + 1} of {len(paragraphs)}")
 
-    with st.form("cloze_form"):
-        for i, pos in enumerate(positions):
-            if correct_words[i] is not None:
-                st.write(f"**{i+1}.** ✅ {correct_words[i]}")
-            else:
-                user_input = st.text_input(f"{i+1}. Fill in the blank:", key=f"blank_{i}")
-                if user_input and user_input.strip().lower() == answers[i].lower():
-                    correct_words[i] = answers[i]
-        submitted = st.form_submit_button("Check Answers")
-
+    # Show updated paragraph
     display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
@@ -63,7 +57,15 @@ if paragraph_input:
     st.write("**Updated Paragraph:**")
     st.write("".join(display_tokens))
 
-    if all(word is not None for word in correct_words):
+    # One blank input at a time
+    if fill_index < len(positions):
+        i = fill_index
+        user_input = st.text_input(f"Fill in the blank #{i+1}:", key=f"blank_{i}")
+        if user_input and user_input.strip().lower() == answers[i].lower():
+            st.session_state.correct_words[i] = answers[i]
+            st.session_state.fill_index += 1
+            st.experimental_rerun()
+    else:
         st.success("All blanks filled correctly!")
         if current_idx + 1 < len(paragraphs):
             if st.button("➡ Next Paragraph"):
@@ -73,6 +75,8 @@ if paragraph_input:
                 st.session_state.answers = new_answers
                 st.session_state.positions = new_positions
                 st.session_state.correct_words = [None] * len(new_positions)
+                st.session_state.fill_index = 0
+                st.experimental_rerun()
         else:
             st.balloons()
             st.info("🎉 All paragraphs completed!")
