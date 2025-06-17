@@ -1,16 +1,14 @@
-# English Cloze Listening App (v5) with Text-to-Speech (TTS)
+# English Cloze Listening App (v6) with Auto Audio and Tab Navigation
 
-🎧 Streamlit app for English cloze listening with integrated speech playback.
+✅ Practice English listening and spelling using cloze-style fill-in-the-blanks.
 
-## Features
+## Updates in v6
 
-- ✅ Input text hides immediately upon pressing 'Generate'
-- ✅ Support unlimited paragraphs
-- ✅ Cloze view with numbered blanks
-- ✅ Real-time correctness feedback
-- 🔊 Text-to-Speech (TTS) to read full paragraph aloud
-- ✅ One paragraph must be completed before proceeding
-- 🎈 Balloon reward and reset option at the end
+- 📤 Input box disappears **immediately** after pressing "Generate"
+- 🔊 Audio player for paragraph auto-appears (no button needed)
+- ⌨ Tab key allows smooth input field switching
+- 📝 Real-time feedback for each blank
+- 📄 View original paragraph after completion
 
 ## Run
 

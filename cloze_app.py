@@ -14,7 +14,7 @@ def safe_rerun():
         try:
             st.experimental_rerun()
         except AttributeError:
-            st.warning("Unable to rerun the app. Please update your Streamlit version.")
+            st.warning("Please update your Streamlit version.")
 
 def tts_base64(text):
     tts = gTTS(text)
@@ -23,10 +23,9 @@ def tts_base64(text):
     b64 = base64.b64encode(buf.getvalue()).decode()
     return f"data:audio/mp3;base64,{b64}"
 
-st.set_page_config(page_title="Cloze Listening Practice", layout="wide")
-st.title("🎧 English Cloze Listening Practice App with TTS")
+st.set_page_config(page_title="Cloze Listening with TTS", layout="wide")
+st.title("🎧 English Cloze Listening App with TTS")
 
-# Session state init
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
 
@@ -67,7 +66,7 @@ if not st.session_state.initialized:
             st.session_state.ratio = missing_ratio
             safe_rerun()
 
-# If initialized, run practice logic
+# Main logic
 if st.session_state.get("initialized", False):
     idx = st.session_state.current_idx
     block = st.session_state.blocks[idx]
@@ -83,12 +82,11 @@ if st.session_state.get("initialized", False):
     st.subheader(f"Paragraph {idx+1} of {len(st.session_state.blocks)}")
     st.markdown(f"🟢 **Progress: {sum(w is not None for w in correct_words)} / {total}**")
 
-    # Play full paragraph
-    if st.button("🔊 Play Paragraph"):
-        b64_audio = tts_base64(block["original"])
-        st.audio(b64_audio, format="audio/mp3")
+    # Always display audio bar
+    b64_audio = tts_base64(block["original"])
+    st.audio(b64_audio, format="audio/mp3")
 
-    # Cloze view
+    # Cloze paragraph with numbering
     display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
@@ -100,6 +98,7 @@ if st.session_state.get("initialized", False):
 
     st.markdown("---")
     st.markdown("### 📝 Fill in the blanks:")
+
     rows = math.ceil(len(positions) / 4)
     for r in range(rows):
         cols = st.columns(4)
@@ -109,18 +108,18 @@ if st.session_state.get("initialized", False):
                 break
             with cols[c]:
                 label = f"[{i+1}]"
+                key_name = f"input_{idx}_{i}"
                 if correct_words[i] is not None:
                     st.text_input(label, value=correct_words[i], key=f"filled_{idx}_{i}", disabled=True, label_visibility='visible')
                 else:
-                    input_val = st.text_input(label, key=f"input_{idx}_{i}", label_visibility='visible')
-                    if input_val:
+                    input_val = st.text_input(label, value=block["input_values"][i], key=key_name, label_visibility='visible')
+                    if input_val and input_val.strip().lower() == answers[i].lower():
+                        block["correct_words"][i] = answers[i]
+                        block["feedback"][i] = "✅ Correct!"
+                        safe_rerun()
+                    elif input_val:
                         block["input_values"][i] = input_val
-                        if input_val.strip().lower() == answers[i].lower():
-                            block["correct_words"][i] = answers[i]
-                            block["feedback"][i] = "✅ Correct!"
-                            safe_rerun()
-                        else:
-                            block["feedback"][i] = "❌ Try again"
+                        block["feedback"][i] = "❌ Try again"
                     if feedback[i]:
                         st.caption(feedback[i])
 
