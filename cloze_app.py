@@ -3,6 +3,9 @@ import streamlit as st
 import random
 import re
 import math
+from gtts import gTTS
+import base64
+from io import BytesIO
 
 def safe_rerun():
     try:
@@ -13,60 +16,58 @@ def safe_rerun():
         except AttributeError:
             st.warning("Unable to rerun the app. Please update your Streamlit version.")
 
-st.set_page_config(page_title="Cloze Listening Practice", layout="wide")
-st.title("🎧 English Cloze Listening Practice App")
+def tts_base64(text):
+    tts = gTTS(text)
+    buf = BytesIO()
+    tts.write_to_fp(buf)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+    return f"data:audio/mp3;base64,{b64}"
 
-# Sidebar control
-show_input = not st.session_state.get("initialized", False)
-if show_input:
-    st.sidebar.header("Step 1: Input Settings")
-    paragraph_input = st.sidebar.text_area("Enter 1–4 paragraphs (one per line):", height=200, key="input_area")
-    missing_ratio = st.sidebar.slider("Select missing word ratio:", 0.05, 0.9, 0.3, step=0.05)
-    start_button = st.sidebar.button("✅ Generate Cloze Paragraphs")
-else:
-    start_button = False
-    missing_ratio = st.session_state["ratio"]
+st.set_page_config(page_title="Cloze Listening Practice", layout="wide")
+st.title("🎧 English Cloze Listening Practice App with TTS")
 
 # Session state init
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
 
-def generate_cloze_data(paragraph, ratio):
-    words = re.findall(r"\b\w+\b|\W", paragraph)
-    word_indices = [i for i, w in enumerate(words) if re.match(r"\w+", w)]
-    num_to_remove = max(1, int(len(word_indices) * ratio))
-    missing_indices = sorted(random.sample(word_indices, num_to_remove))
-    answers = [words[i] for i in missing_indices]
-    cloze_words = words[:]
-    for i in missing_indices:
-        cloze_words[i] = "____"
-    return cloze_words, answers, missing_indices
+# Sidebar input
+if not st.session_state.initialized:
+    st.sidebar.header("Step 1: Input Settings")
+    paragraph_input = st.sidebar.text_area("Enter any number of paragraphs (one per line):", height=200, key="input_area")
+    missing_ratio = st.sidebar.slider("Select missing word ratio:", 0.05, 0.9, 0.3, step=0.05)
+    start_button = st.sidebar.button("✅ Generate Cloze Paragraphs")
 
-# Generate paragraphs
-if start_button:
-    paragraphs = [p.strip() for p in st.session_state["input_area"].split("\n") if p.strip()]
-    if 1 <= len(paragraphs) <= 4:
-        all_blocks = []
-        for p in paragraphs:
-            tokens, answers, positions = generate_cloze_data(p, missing_ratio)
-            block = {
-                "original": p,
-                "tokens": tokens,
-                "answers": answers,
-                "positions": positions,
-                "correct_words": [None] * len(positions),
-                "input_values": ["" for _ in positions],
-                "feedback": ["" for _ in positions],
-                "done": False
-            }
-            all_blocks.append(block)
+    if start_button:
+        paragraphs = [p.strip() for p in paragraph_input.split("\n") if p.strip()]
+        if len(paragraphs) >= 1:
+            all_blocks = []
+            for p in paragraphs:
+                words = re.findall(r"\b\w+\b|\W", p)
+                word_indices = [i for i, w in enumerate(words) if re.match(r"\w+", w)]
+                num_to_remove = max(1, int(len(word_indices) * missing_ratio))
+                missing_indices = sorted(random.sample(word_indices, num_to_remove))
+                answers = [words[i] for i in missing_indices]
+                cloze_words = words[:]
+                for i in missing_indices:
+                    cloze_words[i] = "____"
+                all_blocks.append({
+                    "original": p,
+                    "tokens": cloze_words,
+                    "answers": answers,
+                    "positions": missing_indices,
+                    "correct_words": [None] * len(missing_indices),
+                    "input_values": ["" for _ in missing_indices],
+                    "feedback": ["" for _ in missing_indices],
+                    "done": False
+                })
 
-        st.session_state.blocks = all_blocks
-        st.session_state.current_idx = 0
-        st.session_state.initialized = True
-        st.session_state.ratio = missing_ratio
+            st.session_state.blocks = all_blocks
+            st.session_state.current_idx = 0
+            st.session_state.initialized = True
+            st.session_state.ratio = missing_ratio
+            safe_rerun()
 
-# Display logic
+# If initialized, run practice logic
 if st.session_state.get("initialized", False):
     idx = st.session_state.current_idx
     block = st.session_state.blocks[idx]
@@ -82,7 +83,12 @@ if st.session_state.get("initialized", False):
     st.subheader(f"Paragraph {idx+1} of {len(st.session_state.blocks)}")
     st.markdown(f"🟢 **Progress: {sum(w is not None for w in correct_words)} / {total}**")
 
-    # Cloze paragraph
+    # Play full paragraph
+    if st.button("🔊 Play Paragraph"):
+        b64_audio = tts_base64(block["original"])
+        st.audio(b64_audio, format="audio/mp3")
+
+    # Cloze view
     display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
@@ -92,7 +98,6 @@ if st.session_state.get("initialized", False):
     st.markdown("**Cloze Paragraph:**", unsafe_allow_html=True)
     st.markdown("".join(display_tokens), unsafe_allow_html=True)
 
-    # Input fields
     st.markdown("---")
     st.markdown("### 📝 Fill in the blanks:")
     rows = math.ceil(len(positions) / 4)
@@ -119,7 +124,6 @@ if st.session_state.get("initialized", False):
                     if feedback[i]:
                         st.caption(feedback[i])
 
-    # Completion logic
     if all(w is not None for w in correct_words) and not block["done"]:
         block["done"] = True
         st.balloons()

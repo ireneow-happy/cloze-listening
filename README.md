@@ -1,15 +1,18 @@
-# English Cloze Listening App (Version 4)
+# English Cloze Listening App (v5) with Text-to-Speech (TTS)
 
-🧠 Advanced cloze testing tool using Streamlit — now with input hiding, progressive reveal, and paragraph control.
+🎧 Streamlit app for English cloze listening with integrated speech playback.
 
-## What's New
+## Features
 
-- Input paragraph area auto-hides after pressing "Generate"
-- Reveals original paragraph only after completing that section
-- Supports 1–4 paragraphs at once
-- Must complete all blanks in current paragraph to unlock the next
+- ✅ Input text hides immediately upon pressing 'Generate'
+- ✅ Support unlimited paragraphs
+- ✅ Cloze view with numbered blanks
+- ✅ Real-time correctness feedback
+- 🔊 Text-to-Speech (TTS) to read full paragraph aloud
+- ✅ One paragraph must be completed before proceeding
+- 🎈 Balloon reward and reset option at the end
 
-## Usage
+## Run
 
 ```bash
 pip install -r requirements.txt
