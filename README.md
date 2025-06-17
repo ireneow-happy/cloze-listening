@@ -1,18 +1,14 @@
-# English Cloze Listening App (v6) with Auto Audio and Tab Navigation
+# Cloze Listening App v7 (with POS + Core Meaning Selection)
 
-✅ Practice English listening and spelling using cloze-style fill-in-the-blanks.
-
-## Updates in v6
-
-- 📤 Input box disappears **immediately** after pressing "Generate"
-- 🔊 Audio player for paragraph auto-appears (no button needed)
-- ⌨ Tab key allows smooth input field switching
-- 📝 Real-time feedback for each blank
-- 📄 View original paragraph after completion
+## Features
+- 🎯 Smart missing word selection based on sentence structure
+- ✅ Uses POS tagging and dependency parsing
+- 🔊 TTS for paragraph playback
+- 🧠 More meaningful cloze practice
 
 ## Run
-
 ```bash
 pip install -r requirements.txt
+python -m spacy download en_core_web_sm
 streamlit run cloze_app.py
 ```
