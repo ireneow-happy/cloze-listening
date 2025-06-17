@@ -16,17 +16,21 @@ def safe_rerun():
 st.set_page_config(page_title="Cloze Listening Practice", layout="wide")
 st.title("🎧 English Cloze Listening Practice App")
 
-# Sidebar settings
-st.sidebar.header("Step 1: Input Settings")
-paragraph_input = st.sidebar.text_area("Enter paragraphs (one per line):", height=200, key="input_area")
-missing_ratio = st.sidebar.slider("Select missing word ratio:", 0.05, 0.9, 0.3, step=0.05)
-start_button = st.sidebar.button("✅ Generate Cloze Paragraphs")
+# Sidebar control
+show_input = not st.session_state.get("initialized", False)
+if show_input:
+    st.sidebar.header("Step 1: Input Settings")
+    paragraph_input = st.sidebar.text_area("Enter 1–4 paragraphs (one per line):", height=200, key="input_area")
+    missing_ratio = st.sidebar.slider("Select missing word ratio:", 0.05, 0.9, 0.3, step=0.05)
+    start_button = st.sidebar.button("✅ Generate Cloze Paragraphs")
+else:
+    start_button = False
+    missing_ratio = st.session_state["ratio"]
 
-# Initialize session
+# Session state init
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
 
-# Function to generate cloze data
 def generate_cloze_data(paragraph, ratio):
     words = re.findall(r"\b\w+\b|\W", paragraph)
     word_indices = [i for i, w in enumerate(words) if re.match(r"\w+", w)]
@@ -38,29 +42,32 @@ def generate_cloze_data(paragraph, ratio):
         cloze_words[i] = "____"
     return cloze_words, answers, missing_indices
 
-# Generate button triggers cloze creation
-if start_button and paragraph_input:
-    paragraphs = [p.strip() for p in paragraph_input.split("\n") if p.strip()]
-    all_blocks = []
-    for p in paragraphs:
-        tokens, answers, positions = generate_cloze_data(p, missing_ratio)
-        block = {
-            "original": p,
-            "tokens": tokens,
-            "answers": answers,
-            "positions": positions,
-            "correct_words": [None] * len(positions),
-            "input_values": ["" for _ in positions],
-            "feedback": ["" for _ in positions],
-            "done": False
-        }
-        all_blocks.append(block)
+# Generate paragraphs
+if start_button:
+    paragraphs = [p.strip() for p in st.session_state["input_area"].split("\n") if p.strip()]
+    if 1 <= len(paragraphs) <= 4:
+        all_blocks = []
+        for p in paragraphs:
+            tokens, answers, positions = generate_cloze_data(p, missing_ratio)
+            block = {
+                "original": p,
+                "tokens": tokens,
+                "answers": answers,
+                "positions": positions,
+                "correct_words": [None] * len(positions),
+                "input_values": ["" for _ in positions],
+                "feedback": ["" for _ in positions],
+                "done": False
+            }
+            all_blocks.append(block)
 
-    st.session_state.blocks = all_blocks
-    st.session_state.current_idx = 0
-    st.session_state.initialized = True
+        st.session_state.blocks = all_blocks
+        st.session_state.current_idx = 0
+        st.session_state.initialized = True
+        st.session_state.ratio = missing_ratio
 
-if st.session_state.initialized:
+# Display logic
+if st.session_state.get("initialized", False):
     idx = st.session_state.current_idx
     block = st.session_state.blocks[idx]
 
@@ -75,17 +82,17 @@ if st.session_state.initialized:
     st.subheader(f"Paragraph {idx+1} of {len(st.session_state.blocks)}")
     st.markdown(f"🟢 **Progress: {sum(w is not None for w in correct_words)} / {total}**")
 
-    # Cloze paragraph with numbered blanks
-    numbered_tokens = tokens[:]
+    # Cloze paragraph
+    display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
-            numbered_tokens[pos] = f"<u>{correct_words[i]}</u>"
+            display_tokens[pos] = f"<u>{correct_words[i]}</u>"
         else:
-            numbered_tokens[pos] = f"<b>[{i+1}] ____</b>"
+            display_tokens[pos] = f"<b>[{i+1}] ____</b>"
     st.markdown("**Cloze Paragraph:**", unsafe_allow_html=True)
-    st.markdown("".join(numbered_tokens), unsafe_allow_html=True)
+    st.markdown("".join(display_tokens), unsafe_allow_html=True)
 
-    # Input layout
+    # Input fields
     st.markdown("---")
     st.markdown("### 📝 Fill in the blanks:")
     rows = math.ceil(len(positions) / 4)
@@ -112,20 +119,21 @@ if st.session_state.initialized:
                     if feedback[i]:
                         st.caption(feedback[i])
 
+    # Completion logic
     if all(w is not None for w in correct_words) and not block["done"]:
         block["done"] = True
         st.balloons()
 
     if block["done"]:
+        with st.expander("📄 Original Paragraph"):
+            st.markdown(block["original"])
+
         if idx + 1 < len(st.session_state.blocks):
             if st.button("➡ Proceed to Next Paragraph"):
                 st.session_state.current_idx += 1
                 safe_rerun()
         else:
             st.success("🎉 All paragraphs completed!")
-            with st.expander("📄 View Full Text"):
-                for blk in st.session_state.blocks:
-                    st.markdown(blk["original"])
             if st.button("🔁 Start Over"):
                 st.session_state.clear()
                 safe_rerun()

@@ -1,16 +1,15 @@
-# English Cloze Listening App (Version 3)
+# English Cloze Listening App (Version 4)
 
-An interactive Streamlit app for paragraph-based English cloze practice.
+🧠 Advanced cloze testing tool using Streamlit — now with input hiding, progressive reveal, and paragraph control.
 
-### New Features
+## What's New
 
-- Multiple paragraphs input (line by line)
-- One paragraph at a time; must complete current before proceeding
-- Blanks numbered (e.g. [1], [2]) in both paragraph and input
-- Original input hidden during task, shown only after completion
-- Celebration + restart on completion
+- Input paragraph area auto-hides after pressing "Generate"
+- Reveals original paragraph only after completing that section
+- Supports 1–4 paragraphs at once
+- Must complete all blanks in current paragraph to unlock the next
 
-### Run
+## Usage
 
 ```bash
 pip install -r requirements.txt
