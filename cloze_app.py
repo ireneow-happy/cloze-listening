@@ -14,23 +14,29 @@ def tts_base64(text):
     b64 = base64.b64encode(buf.getvalue()).decode()
     return f"data:audio/mp3;base64,{b64}"
 
+# Updated suffix list
+smart_suffixes = [
+    "ing", "ed", "ly", "ous", "ful", "less", "ness", "ment", "ion", "tion",
+    "ity", "al", "ive", "able", "ible", "ship", "ence", "ance", "est", "ish"
+]
+
 def is_candidate(word):
     word = word.lower().strip(".,!?;")
-    return (
-        len(word) > 3 and (
-            word.endswith("ing") or word.endswith("ed") or word.endswith("ly") or
-            word.endswith("ous") or word.endswith("ful") or word.endswith("ness") or
-            word.endswith("ment") or word.endswith("ion") or word.endswith("ity") or
-            word.endswith("al") or word.endswith("ive")
-        )
-    )
+    return len(word) > 3 and any(word.endswith(suffix) for suffix in smart_suffixes)
 
 def select_keywords(words, ratio=0.2):
     word_indices = [i for i, w in enumerate(words) if re.match(r"\w+$", w) and is_candidate(w)]
-    if not word_indices:
-        word_indices = [i for i, w in enumerate(words) if re.match(r"\w+$", w) and len(w) > 3]
-    num_to_remove = max(1, int(len(word_indices) * ratio))
-    return sorted(random.sample(word_indices, min(num_to_remove, len(word_indices))))
+    target_count = max(1, int(len([w for w in words if re.match(r"\w+$", w)]) * ratio))
+
+    if len(word_indices) < target_count:
+        all_indices = [i for i, w in enumerate(words) if re.match(r"\w+$", w) and len(w) > 3 and i not in word_indices]
+        needed = target_count - len(word_indices)
+        if len(all_indices) > needed:
+            word_indices += random.sample(all_indices, needed)
+        else:
+            word_indices += all_indices  # add all if not enough
+
+    return sorted(word_indices[:target_count])
 
 def generate_cloze_paragraphs(paragraphs, ratio):
     blocks = []
@@ -53,8 +59,8 @@ def generate_cloze_paragraphs(paragraphs, ratio):
         })
     return blocks
 
-st.set_page_config(page_title="Cloze App v7.1", layout="wide")
-st.title("🧠 Cloze Listening App (Rule-based POS Selection)")
+st.set_page_config(page_title="Cloze App v7.2", layout="wide")
+st.title("🧠 Cloze Listening App (v7.2 Smart + Fallback)")
 
 if "initialized" not in st.session_state:
     st.session_state.initialized = False

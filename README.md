@@ -1,15 +1,16 @@
-# Cloze Listening App v7.1 (Streamlit Cloud Ready)
+# Cloze Listening App v7.2
 
-🧠 Smart missing word selection based on custom POS logic (no external NLP model)
+Smart + Fallback cloze generator for listening & language learning.
 
 ## Features
-- ✅ Selects verbs, nouns, adjectives, adverbs based on suffix patterns
-- ✅ No spaCy or stanza required
-- ✅ Works perfectly on Streamlit Cloud
-- ✅ Includes TTS audio for listening practice
-- ✅ Progressive paragraph completion, tab-ready UI
 
-## Run on Cloud or Local
+- ✅ Improved suffix-based word filtering (20+ suffixes)
+- ✅ If smart words are too few, random selection fills the gap
+- ✅ Paragraph-by-paragraph fill-in UI
+- ✅ Audio playback with Google TTS
+- ✅ Streamlit Cloud compatible
+
+## Run
 
 ```bash
 pip install -r requirements.txt
