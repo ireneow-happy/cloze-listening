@@ -1,21 +1,23 @@
-# English Cloze Listening Practice App
+# English Cloze Listening App (Enhanced)
 
-This is a Streamlit-based interactive English cloze (fill-in-the-blank) listening app.
+A modern Streamlit app for interactive English cloze (fill-in-the-blank) practice.
 
-## Features
+### Features
 
-- Input custom paragraphs to generate cloze tests
+- Input your own paragraph
 - Adjustable missing word ratio
-- One blank shown at a time; correct answer required to proceed
-- Visual confirmation of correct words (✅ and underline)
-- Progress tracker (e.g. 2/6 completed)
+- One-click generate
+- Shows correct/wrong message after each blank
+- Highlights correct blanks with underline
+- Shows full progress (e.g. 3/6)
+- All fields stay visible after input
+- Compact layout (one row for all blanks)
+- 🎈 Balloon celebration when complete
+- 🔁 Reset to start over
 
-## How to Use
+### Run Locally
 
 ```bash
 pip install -r requirements.txt
 streamlit run cloze_app.py
 ```
-
-Then open the browser at the address shown.
-
