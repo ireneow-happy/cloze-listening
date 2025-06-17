@@ -3,6 +3,7 @@ import streamlit as st
 import random
 import re
 import math
+from datetime import datetime
 from gtts import gTTS
 import base64
 from io import BytesIO
@@ -14,7 +15,7 @@ def tts_base64(text):
     b64 = base64.b64encode(buf.getvalue()).decode()
     return f"data:audio/mp3;base64,{b64}"
 
-# Updated suffix list
+# Improved suffix rules
 smart_suffixes = [
     "ing", "ed", "ly", "ous", "ful", "less", "ness", "ment", "ion", "tion",
     "ity", "al", "ive", "able", "ible", "ship", "ence", "ance", "est", "ish"
@@ -34,8 +35,7 @@ def select_keywords(words, ratio=0.2):
         if len(all_indices) > needed:
             word_indices += random.sample(all_indices, needed)
         else:
-            word_indices += all_indices  # add all if not enough
-
+            word_indices += all_indices
     return sorted(word_indices[:target_count])
 
 def generate_cloze_paragraphs(paragraphs, ratio):
@@ -59,8 +59,11 @@ def generate_cloze_paragraphs(paragraphs, ratio):
         })
     return blocks
 
-st.set_page_config(page_title="Cloze App v7.2", layout="wide")
-st.title("🧠 Cloze Listening App (v7.2 Smart + Fallback)")
+st.set_page_config(page_title="Cloze App v7.3", layout="wide")
+st.title("🧠 Cloze Listening App (v7.3 with Memory + UI Refinement)")
+
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 if "initialized" not in st.session_state:
     st.session_state.initialized = False
@@ -77,6 +80,8 @@ if not st.session_state.initialized:
             st.session_state.blocks = generate_cloze_paragraphs(paragraphs, missing_ratio)
             st.session_state.current_idx = 0
             st.session_state.initialized = True
+            st.session_state.session_start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            st.session_state.session_paragraphs = paragraphs
             st.rerun()
 
 if st.session_state.get("initialized", False):
@@ -99,7 +104,7 @@ if st.session_state.get("initialized", False):
         if correct_words[i] is not None:
             display_tokens[pos] = f"<u>{correct_words[i]}</u>"
         else:
-            display_tokens[pos] = f"<b>[{i+1}] ____</b>"
+            display_tokens[pos] = f'<span style="font-size:0.75rem;color:gray;">[{i+1}]</span> ____'
     st.markdown("**Cloze Paragraph:**", unsafe_allow_html=True)
     st.markdown("".join(display_tokens), unsafe_allow_html=True)
 
@@ -144,6 +149,20 @@ if st.session_state.get("initialized", False):
                 st.rerun()
         else:
             st.success("🎉 All paragraphs completed!")
+            correct_total = sum(len(b["positions"]) for b in st.session_state.blocks)
+            correct_done = sum(len([w for w in b["correct_words"] if w is not None]) for b in st.session_state.blocks)
+            st.session_state.history.append({
+                "timestamp": st.session_state.session_start_time,
+                "paragraphs": st.session_state.session_paragraphs,
+                "score": f"{correct_done}/{correct_total}"
+            })
             if st.button("🔁 Start Over"):
-                st.session_state.clear()
+                st.session_state.initialized = False
                 st.rerun()
+
+    if st.session_state.history:
+        st.markdown("### 📚 Practice History")
+        for h in st.session_state.history[::-1]:
+            st.markdown(f"**{h['timestamp']}** – Score: {h['score']}")
+            for p in h["paragraphs"]:
+                st.markdown(f"- {p}")
