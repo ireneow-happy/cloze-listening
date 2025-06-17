@@ -1,20 +1,16 @@
-# English Cloze Listening App (Final Plus Version)
+# English Cloze Listening App (Version 3)
 
-🎧 Streamlit app for fill-in-the-blank cloze practice with multi-paragraph and statistics support.
+An interactive Streamlit app for paragraph-based English cloze practice.
 
-## Features
+### New Features
 
-- Input multiple paragraphs
-- Adjustable missing word ratio
-- One-click generate cloze
-- Multi-column blank layout (4 per row)
-- Marked input correctness
-- Real-time feedback per word
-- Underlined correct answers
-- Paragraph-by-paragraph flow
-- 🎈 Celebration + 📊 Final Stats
+- Multiple paragraphs input (line by line)
+- One paragraph at a time; must complete current before proceeding
+- Blanks numbered (e.g. [1], [2]) in both paragraph and input
+- Original input hidden during task, shown only after completion
+- Celebration + restart on completion
 
-## How to Run
+### Run
 
 ```bash
 pip install -r requirements.txt
