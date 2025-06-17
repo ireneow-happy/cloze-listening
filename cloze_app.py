@@ -2,6 +2,15 @@ import streamlit as st
 import random
 import re
 
+def safe_rerun():
+    try:
+        st.rerun()
+    except AttributeError:
+        try:
+            st.experimental_rerun()
+        except AttributeError:
+            st.warning("Unable to rerun the app. Please update your Streamlit version.")
+
 st.set_page_config(page_title="Cloze Listening Practice", layout="wide")
 st.title("🎧 English Cloze Listening Practice App")
 
@@ -49,7 +58,6 @@ if paragraph_input:
 
     st.subheader(f"Paragraph {current_idx + 1} of {len(paragraphs)}")
 
-    # Show updated paragraph
     display_tokens = tokens[:]
     for i, pos in enumerate(positions):
         if correct_words[i] is not None:
@@ -57,14 +65,13 @@ if paragraph_input:
     st.write("**Updated Paragraph:**")
     st.write("".join(display_tokens))
 
-    # One blank input at a time
     if fill_index < len(positions):
         i = fill_index
         user_input = st.text_input(f"Fill in the blank #{i+1}:", key=f"blank_{i}")
         if user_input and user_input.strip().lower() == answers[i].lower():
             st.session_state.correct_words[i] = answers[i]
             st.session_state.fill_index += 1
-            st.experimental_rerun()
+            safe_rerun()
     else:
         st.success("All blanks filled correctly!")
         if current_idx + 1 < len(paragraphs):
@@ -76,7 +83,7 @@ if paragraph_input:
                 st.session_state.positions = new_positions
                 st.session_state.correct_words = [None] * len(new_positions)
                 st.session_state.fill_index = 0
-                st.experimental_rerun()
+                safe_rerun()
         else:
             st.balloons()
             st.info("🎉 All paragraphs completed!")
